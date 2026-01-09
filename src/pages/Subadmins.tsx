@@ -4,9 +4,32 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -56,11 +79,14 @@ export default function Subadmins() {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/subadmins`, {
-        headers: {
-          'Authorization': `Bearer ${tokens.access}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/subadmins`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -89,14 +115,17 @@ export default function Subadmins() {
     setCreating(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/subadmin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokens?.access}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/subadmin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokens?.access}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       const data = await response.json();
 
@@ -105,7 +134,13 @@ export default function Subadmins() {
           title: "Success",
           description: "Subadmin created successfully",
         });
-        setFormData({ email: "", first_name: "", last_name: "", password: "", access_pages: [] });
+        setFormData({
+          email: "",
+          first_name: "",
+          last_name: "",
+          password: "",
+          access_pages: [],
+        });
         setIsCreateDialogOpen(false);
         fetchSubadmins(); // Refresh the list
       } else {
@@ -131,12 +166,15 @@ export default function Subadmins() {
     setDeleting(id);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/subadmin/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${tokens?.access}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/subadmin/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tokens?.access}`,
+          },
+        }
+      );
 
       if (response.ok) {
         toast({
@@ -170,7 +208,8 @@ export default function Subadmins() {
     }
   }, [isLoggedIn, tokens]);
 
-  if (!isLoggedIn) {
+  {
+    /**  if (!isLoggedIn) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg">Please log in to access this page.</div>
@@ -185,12 +224,16 @@ export default function Subadmins() {
       </div>
     );
   }
+ */
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Subadmins</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Manage Subadmins
+          </h1>
           <p className="text-muted-foreground">
             Create and manage subadmin accounts with different access levels.
           </p>
@@ -214,7 +257,9 @@ export default function Subadmins() {
                   <Input
                     id="first_name"
                     value={formData.first_name}
-                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, first_name: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -223,7 +268,9 @@ export default function Subadmins() {
                   <Input
                     id="last_name"
                     value={formData.last_name}
-                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, last_name: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -234,7 +281,9 @@ export default function Subadmins() {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -244,7 +293,9 @@ export default function Subadmins() {
                   id="password"
                   type="password"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -281,7 +332,9 @@ export default function Subadmins() {
                     <Checkbox
                       id="applicants"
                       checked={formData.access_pages.includes("applicants")}
-                      onCheckedChange={() => handleAccessPageToggle("applicants")}
+                      onCheckedChange={() =>
+                        handleAccessPageToggle("applicants")
+                      }
                     />
                     <label
                       htmlFor="applicants"
@@ -358,7 +411,9 @@ export default function Subadmins() {
                             </span>
                           ))
                         ) : (
-                          <span className="text-sm text-muted-foreground">No access</span>
+                          <span className="text-sm text-muted-foreground">
+                            No access
+                          </span>
                         )}
                       </div>
                     </TableCell>
@@ -380,8 +435,9 @@ export default function Subadmins() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Subadmin</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete {subadmin.first_name} {subadmin.last_name}?
-                              This action cannot be undone.
+                              Are you sure you want to delete{" "}
+                              {subadmin.first_name} {subadmin.last_name}? This
+                              action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -391,7 +447,9 @@ export default function Subadmins() {
                               className="bg-red-600 hover:bg-red-700"
                               disabled={deleting === subadmin.id}
                             >
-                              {deleting === subadmin.id ? "Deleting..." : "Delete"}
+                              {deleting === subadmin.id
+                                ? "Deleting..."
+                                : "Delete"}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -407,4 +465,3 @@ export default function Subadmins() {
     </div>
   );
 }
-
