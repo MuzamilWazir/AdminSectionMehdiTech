@@ -79,13 +79,13 @@ export function Sidebar({ collapsed }: SidebarProps) {
     <aside
       className={cn(
         "flex flex-col border-r border-border bg-[#041431]   transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        collapsed ? "w-16" : " w-64"
       )}
     >
       {/** "flex flex-col border-r border-border bg-[#3F4D67]   transition-all duration-300", */}
       <div className="flex h-16 items-center justify-center border-b border-border px-4">
         <img
-          src={!collapsed ? `/Logo.png` : `logo-first-character.png`}
+          src={!collapsed ? `/Logo.png` : ` logo-first-character.png`}
           alt="Mehdi Technologies"
           className="h-8 w-auto"
         />
