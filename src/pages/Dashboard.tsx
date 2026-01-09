@@ -8,6 +8,8 @@ const stats = [
     change: "+12% from last month",
     icon: FileText,
     color: "text-primary",
+    bgcolor:
+      "   bg-gradient-to-br from-blue-500 to-blue-900 p-3 rounded-xl border border-gray-100 shadow-black shadow-sm",
   },
   {
     title: "Active Jobs",
@@ -15,6 +17,8 @@ const stats = [
     change: "+3 new this week",
     icon: Briefcase,
     color: "text-success",
+    bgcolor:
+      "bg-gradient-to-br from-green-500 to-green-900 p-3 rounded-xl border border-gray-100 shadow-black shadow-sm",
   },
   {
     title: "Pending Applicants",
@@ -22,6 +26,8 @@ const stats = [
     change: "+27 from last week",
     icon: Users,
     color: "text-warning",
+    bgcolor:
+      "bg-gradient-to-br from-orange-500 to-orange-900  p-3 rounded-xl border border-gray-100 shadow-black shadow-sm",
   },
   {
     title: "Recent Activity",
@@ -29,6 +35,8 @@ const stats = [
     change: "+8% from yesterday",
     icon: Activity,
     color: "text-info",
+    bgcolor:
+      "bg-gradient-to-br from-cyan-500 to-cyan-900 p-3 rounded-xl border border-gray-100 shadow-black shadow-sm ",
   },
 ];
 
@@ -60,19 +68,23 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's what's happening today.</p>
+        <p className="text-muted-foreground">
+          Welcome back! Here's what's happening today.
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 ">
         {stats.map((stat) => (
-          <Card key={stat.title}>
+          <Card key={stat.title} className={`${stat.bgcolor!}`}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+              <CardTitle className="text-sm font-medium text-white">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className={`h-4 w-4  ${stat.color}`} />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground">{stat.change}</p>
+              <div className="text-2xl font-bold text-white">{stat.value}</div>
+              <p className="text-xs text-muted-foreground  text-white">{stat.change}</p>
             </CardContent>
           </Card>
         ))}
@@ -85,12 +97,21 @@ export default function Dashboard() {
         <CardContent>
           <div className="space-y-4">
             {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0">
+              <div
+                key={index}
+                className="flex items-center justify-between border-b border-border pb-4 last:border-0 last:pb-0"
+              >
                 <div>
-                  <p className="text-sm font-medium text-foreground">{activity.action}</p>
-                  <p className="text-xs text-muted-foreground">by {activity.user}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {activity.action}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    by {activity.user}
+                  </p>
                 </div>
-                <span className="text-xs text-muted-foreground">{activity.time}</span>
+                <span className="text-xs text-muted-foreground">
+                  {activity.time}
+                </span>
               </div>
             ))}
           </div>
