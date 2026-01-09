@@ -1,12 +1,12 @@
 import { NavLink } from "@/components/NavLink";
-import { 
-  LayoutDashboard, 
-  FileText, 
-  Briefcase, 
-  Users, 
+import {
+  LayoutDashboard,
+  FileText,
+  Briefcase,
+  Users,
   Settings,
   ChevronLeft,
-  LogOut
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -57,18 +57,18 @@ export function Sidebar({ collapsed }: SidebarProps) {
     if (tokens?.refresh) {
       try {
         await fetch(`${import.meta.env.VITE_API_BASE_URL}/logout`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ refresh: tokens.refresh }),
         });
       } catch (error) {
-        console.error('Logout API failed:', error);
+        console.error("Logout API failed:", error);
       }
     }
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const handleCancelLogout = () => {
@@ -76,27 +76,36 @@ export function Sidebar({ collapsed }: SidebarProps) {
   };
 
   return (
-    <aside 
+    <aside
       className={cn(
-        "flex flex-col border-r border-border bg-[#3F4D67] transition-all duration-300",
+        "flex flex-col border-r border-border bg-[#041431]   transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >
+      {/** "flex flex-col border-r border-border bg-[#3F4D67]   transition-all duration-300", */}
       <div className="flex h-16 items-center justify-center border-b border-border px-4">
-        <img src={! collapsed ? `/Logo.png` : `logo-first-character.png`} alt="Mehdi Technologies" className="h-8 w-auto" />
+        <img
+          src={!collapsed ? `/Logo.png` : `logo-first-character.png`}
+          alt="Mehdi Technologies"
+          className="h-8 w-auto"
+        />
       </div>
 
       <nav className="flex-1 space-y-1 p-3">
-        {navItems.map((item) => (
+        {/**navItems     ---Changes happenws here */}{" "}
+        {allNavItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === "/"}
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-white transition-colors hover:bg-accent hover:text-accent-foreground"
-            activeClassName="bg-[#007BFF] text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+            activeClassName="bg-[#58C9EC] text-black-foreground  "
           >
+            {/**bg-[#007BFF] text-primary-foreground hover:bg-primary hover:text-primary-foreground */}
             <item.icon className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+            {!collapsed && (
+              <span className="text-sm font-medium">{item.label}</span>
+            )}
           </NavLink>
         ))}
       </nav>
@@ -119,7 +128,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
               Confirm Logout
             </h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to log out? You will need to sign in again to access the dashboard.
+              Are you sure you want to log out? You will need to sign in again
+              to access the dashboard.
             </p>
             <div className="flex gap-3 justify-end">
               <button
