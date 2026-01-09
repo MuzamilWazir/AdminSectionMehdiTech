@@ -25,11 +25,11 @@ const AppContent = () => {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={isLoggedIn ? <AdminLayout /> : <Navigate to="/login" replace />}
-          >
+          {/** element={
+              isLoggedIn ? <AdminLayout /> : <Navigate to="/login" replace />
+            } */}
+          <Route path="/login" element={<Login />} />{" "}
+          <Route path="/" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="subadmin" element={<Subadmins />} />
             <Route path="blogs" element={<BlogManager />} />
