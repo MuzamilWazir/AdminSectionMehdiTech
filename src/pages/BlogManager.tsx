@@ -3,7 +3,13 @@ import { useAuth } from "../contexts/AuthContext";
 import { DataTable, Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/RichTextEditor";
@@ -57,11 +63,14 @@ export default function BlogManager() {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/blogs`, {
-        headers: {
-          'Authorization': `Bearer ${tokens.access}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/blogs`,
+        {
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -82,7 +91,7 @@ export default function BlogManager() {
 
     setSaving(true);
     try {
-      const method = currentBlog.id ? 'PUT' : 'POST';
+      const method = currentBlog.id ? "PUT" : "POST";
       const url = currentBlog.id
         ? `${import.meta.env.VITE_API_BASE_URL}/blogs/${currentBlog.id}`
         : `${import.meta.env.VITE_API_BASE_URL}/blogs`;
@@ -90,19 +99,21 @@ export default function BlogManager() {
       const response = await fetch(url, {
         method,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokens.access}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${tokens.access}`,
         },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        toast.success(`Blog ${currentBlog.id ? 'updated' : 'created'} successfully`);
+        toast.success(
+          `Blog ${currentBlog.id ? "updated" : "created"} successfully`
+        );
         setIsEditorOpen(false);
         resetForm();
         fetchBlogs();
       } else {
-        toast.error(`Failed to ${currentBlog.id ? 'update' : 'create'} blog`);
+        toast.error(`Failed to ${currentBlog.id ? "update" : "create"} blog`);
       }
     } catch (error) {
       toast.error("Network error while saving blog");
@@ -116,12 +127,15 @@ export default function BlogManager() {
     if (!tokens?.access) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/blogs/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${tokens.access}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/blogs/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+          },
+        }
+      );
 
       if (response.ok) {
         toast.success("Blog deleted successfully");
@@ -139,12 +153,15 @@ export default function BlogManager() {
     if (!tokens?.access) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/blogs/${id}/${status}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${tokens.access}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/blogs/${id}/${status}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+          },
+        }
+      );
 
       if (response.ok) {
         toast.success(`Blog ${status} successfully`);
@@ -245,8 +262,8 @@ export default function BlogManager() {
           >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
@@ -304,8 +321,8 @@ export default function BlogManager() {
     setPreviewContent(blog.content);
     setIsPreviewOpen(true);
   };
-
-  if (!isLoggedIn) {
+  {
+    /**  if (!isLoggedIn) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg">Please log in to access this page.</div>
@@ -319,6 +336,7 @@ export default function BlogManager() {
         <div className="text-lg">Loading blogs...</div>
       </div>
     );
+  } */
   }
 
   return (
@@ -326,17 +344,24 @@ export default function BlogManager() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Blog Manager</h1>
-          <p className="text-muted-foreground">Manage your blog posts and content</p>
+          <p className="text-muted-foreground">
+            Manage your blog posts and content
+          </p>
         </div>
-        <Dialog open={isEditorOpen} onOpenChange={(open) => {
-          setIsEditorOpen(open);
-          if (!open) resetForm();
-        }}>
+        <Dialog
+          open={isEditorOpen}
+          onOpenChange={(open) => {
+            setIsEditorOpen(open);
+            if (!open) resetForm();
+          }}
+        >
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              resetForm();
-              setIsEditorOpen(true);
-            }}>
+            <Button
+              onClick={() => {
+                resetForm();
+                setIsEditorOpen(true);
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               New Post
             </Button>
@@ -354,7 +379,9 @@ export default function BlogManager() {
                   id="title"
                   placeholder="Post title"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -363,7 +390,9 @@ export default function BlogManager() {
                   id="slug"
                   placeholder="post-slug"
                   value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, slug: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -380,7 +409,9 @@ export default function BlogManager() {
                   id="meta-title"
                   placeholder="SEO title"
                   value={formData.meta_title}
-                  onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, meta_title: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -389,24 +420,32 @@ export default function BlogManager() {
                   id="meta-description"
                   placeholder="SEO description"
                   value={formData.meta_description}
-                  onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      meta_description: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => saveBlog()} disabled={saving}>
                   {saving ? "Saving..." : "Save Draft"}
                 </Button>
-                <Button 
-                  variant="default" 
+                <Button
+                  variant="default"
                   onClick={() => {
                     setFormData({ ...formData, status: "published" });
                     saveBlog();
-                  }} 
+                  }}
                   disabled={saving}
                 >
                   {saving ? "Publishing..." : "Publish"}
                 </Button>
-                <Button variant="outline" onClick={() => setIsEditorOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditorOpen(false)}
+                >
                   Cancel
                 </Button>
               </div>
@@ -427,7 +466,7 @@ export default function BlogManager() {
             <DialogTitle>Blog Post Preview</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[70vh] pr-4">
-            <div 
+            <div
               className="prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: previewContent }}
             />
