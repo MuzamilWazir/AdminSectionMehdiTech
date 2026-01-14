@@ -25,27 +25,26 @@ const Login = () => {
         },
         body: JSON.stringify({ email, password }),
       });
-      console.log("Response:", response);
+
       const data = await response.json();
 
-      console.log("Response2:", response);
       if (!response.ok) {
         setError(data.detail || "Login failed");
         return;
       }
-      console.log("Response3:", response);
+
       // 🔑 MAP BACKEND RESPONSE → FRONTEND MODELS
       const user: AuthUser = {
         email: data.email,
         role: data.Role,
       };
-      console.log("Response4:", response);
+
       const tokens = {
         access: data.access_token,
       };
-      console.log("Response5:", response);
+
       login(user, tokens);
-      console.log("Response6:", response);
+
       navigate("/");
     } catch {
       setError("Network error. Please try again.");

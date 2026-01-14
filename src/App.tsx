@@ -27,7 +27,7 @@ const AppContent = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route
-            path=""
+            path="/"
             element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />}
           >
             {/**<Navigate to="/login" replace /> */}
