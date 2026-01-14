@@ -26,7 +26,10 @@ const AppContent = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
-          
+          <Route
+            path=""
+            element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />}
+          >
             {/**<Navigate to="/login" replace /> */}
             <Route path="/" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
@@ -35,7 +38,8 @@ const AppContent = () => {
               <Route path="jobs" element={<Jobs />} />
               <Route path="applicants" element={<Applicants />} />
               <Route path="settings" element={<Settings />} />
-            </Route>
+            </Route>{" "}
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
