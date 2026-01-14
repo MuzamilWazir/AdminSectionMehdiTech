@@ -18,19 +18,17 @@ import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface BlogPost {
-  id: number;
+  id: string; // Changed to string to match Supabase UUIDs
   title: string;
   slug: string;
   content: string;
-  author: number;
-  author_name: string;
-  author_email: string;
-  status: "draft" | "published";
+  author: string;
+  status: string;
   tags: string[];
   meta_title: string;
   meta_description: string;
   created_at: string;
-  updated_at: string;
+  thumbnail?: string;
 }
 
 export default function BlogManager() {
@@ -39,7 +37,6 @@ export default function BlogManager() {
   const [loading, setLoading] = useState(true);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentBlog, setCurrentBlog] = useState<Partial<BlogPost>>({});
-  const [editorContent, setEditorContent] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [saving, setSaving] = useState(false);
@@ -55,7 +52,7 @@ export default function BlogManager() {
     meta_description: "",
   });
 
-  // Fetch blogs
+  // Fetch blogs logic
   const fetchBlogs = async () => {
     if (!isLoggedIn || !tokens?.access) {
       setLoading(false);
@@ -63,7 +60,8 @@ export default function BlogManager() {
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/blogs`, {
+      // Added trailing slash to match FastAPI router
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/blogs/`, {
         headers: {
           Authorization: `Bearer ${tokens.access}`,
         },
@@ -71,7 +69,8 @@ export default function BlogManager() {
 
       if (response.ok) {
         const data = await response.json();
-        setBlogs(data);
+        // Backend returns { "blogs": [...] }, so we access .blogs
+        setBlogs(data.blogs || []);
       } else {
         toast.error("Failed to fetch blogs");
       }
@@ -82,35 +81,79 @@ export default function BlogManager() {
     }
   };
 
-  // Create or update blog
+  // Create or update blog logic
   const saveBlog = async () => {
     if (!tokens?.access) return;
 
     setSaving(true);
     try {
-      const method = currentBlog.id ? "PUT" : "POST";
-      const url = currentBlog.id
+      const isUpdate = !!currentBlog.id;
+      const url = isUpdate
         ? `${import.meta.env.VITE_API_URL}/blogs/${currentBlog.id}`
-        : `${import.meta.env.VITE_API_URL}/blogs`;
+        : `${import.meta.env.VITE_API_URL}/blogs/`;
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${tokens.access}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      if (isUpdate) {
+        // PUT logic: Backend expects a JSON dict
+        const updatePayload = {
+          title: formData.title,
+          content: formData.content,
+          image_url: currentBlog.thumbnail || "",
+          internal_urls: [],
+          "user.user.id": "",
+          author: "Admin",
+          tags_list: formData.tags,
+          category: formData.slug || "General",
+        };
 
-      if (response.ok) {
-        toast.success(
-          `Blog ${currentBlog.id ? "updated" : "created"} successfully`
-        );
-        setIsEditorOpen(false);
-        resetForm();
-        fetchBlogs();
+        const response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify(updatePayload),
+        });
+
+        if (response.ok) {
+          toast.success("Blog updated successfully");
+          setIsEditorOpen(false);
+          fetchBlogs();
+        } else {
+          toast.error("Failed to update blog");
+        }
       } else {
-        toast.error(`Failed to ${currentBlog.id ? "update" : "create"} blog`);
+        // POST logic: Backend expects FormData (Multipart)
+        const data = new FormData();
+        data.append("title", formData.title);
+        data.append("content", formData.content);
+        data.append("author", "Admin");
+        data.append("tags", formData.tags.join(","));
+        data.append("category", formData.slug || "General");
+
+        // Since your UI doesn't have a file picker yet,
+        // we send an empty blob to satisfy the 'image' requirement
+        const emptyFile = new File([""], "placeholder.jpg", {
+          type: "image/jpeg",
+        });
+        data.append("image", emptyFile);
+
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${tokens.access}`,
+          },
+          body: data,
+        });
+
+        if (response.ok) {
+          toast.success("Blog created successfully");
+          setIsEditorOpen(false);
+          resetForm();
+          fetchBlogs();
+        } else {
+          const errorData = await response.json();
+          toast.error(errorData.detail || "Failed to create blog");
+        }
       }
     } catch (error) {
       toast.error("Network error while saving blog");
@@ -119,8 +162,7 @@ export default function BlogManager() {
     }
   };
 
-  // Delete blog
-  const deleteBlog = async (id: number) => {
+  const deleteBlog = async (id: string) => {
     if (!tokens?.access) return;
 
     try {
@@ -145,32 +187,6 @@ export default function BlogManager() {
     }
   };
 
-  // Publish/Draft blog
-  const toggleBlogStatus = async (id: number, status: "publish" | "draft") => {
-    if (!tokens?.access) return;
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/blogs/${id}/${status}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${tokens.access}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        toast.success(`Blog ${status} successfully`);
-        fetchBlogs();
-      } else {
-        toast.error(`Failed to ${status} blog`);
-      }
-    } catch (error) {
-      toast.error("Network error while updating blog status");
-    }
-  };
-
   const resetForm = () => {
     setFormData({
       title: "",
@@ -181,7 +197,6 @@ export default function BlogManager() {
       meta_title: "",
       meta_description: "",
     });
-    setEditorContent("");
     setCurrentBlog({});
   };
 
@@ -189,15 +204,19 @@ export default function BlogManager() {
     setCurrentBlog(blog);
     setFormData({
       title: blog.title,
-      slug: blog.slug,
+      slug: blog.slug || "",
       content: blog.content,
-      status: blog.status,
-      tags: blog.tags,
-      meta_title: blog.meta_title,
-      meta_description: blog.meta_description,
+      status: (blog.status as any) || "draft",
+      tags: blog.tags || [],
+      meta_title: blog.meta_title || "",
+      meta_description: blog.meta_description || "",
     });
-    setEditorContent(blog.content);
     setIsEditorOpen(true);
+  };
+
+  const handlePreview = (blog: BlogPost) => {
+    setPreviewContent(blog.content);
+    setIsPreviewOpen(true);
   };
 
   useEffect(() => {
@@ -205,22 +224,14 @@ export default function BlogManager() {
   }, [isLoggedIn, tokens]);
 
   const columns: Column<BlogPost>[] = [
-    {
-      key: "title",
-      label: "Title",
-      sortable: true,
-    },
-    {
-      key: "author_name",
-      label: "Author",
-      sortable: true,
-    },
+    { key: "title", label: "Title", sortable: true },
+    { key: "author", label: "Author", sortable: true },
     {
       key: "status",
       label: "Status",
       render: (value) => (
         <Badge variant={value === "published" ? "default" : "secondary"}>
-          {value}
+          {value || "draft"}
         </Badge>
       ),
     },
@@ -228,84 +239,28 @@ export default function BlogManager() {
       key: "created_at",
       label: "Date",
       sortable: true,
-      render: (value) => new Date(value).toLocaleDateString(),
-    },
-    {
-      key: "tags",
-      label: "Tags",
-      render: (tags: string[]) => (
-        <div className="flex gap-1">
-          {tags.map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      ),
+      render: (value) => (value ? new Date(value).toLocaleDateString() : "N/A"),
     },
     {
       key: "actions",
       label: "Actions",
       render: (_, row) => (
         <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(row);
-            }}
-            title="Edit"
-          >
+          <Button variant="ghost" size="icon" onClick={() => handleEdit(row)}>
             <Edit className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePreview(row);
-            }}
-            title="Preview"
+            onClick={() => handlePreview(row)}
           >
             <Eye className="h-4 w-4" />
           </Button>
-          {row.status === "draft" ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleBlogStatus(row.id, "publish");
-              }}
-              title="Publish"
-              className="text-green-600"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleBlogStatus(row.id, "draft");
-              }}
-              title="Move to Draft"
-              className="text-orange-600"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-          )}
           <Button
             variant="ghost"
             size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteBlog(row.id);
-            }}
+            onClick={() => deleteBlog(row.id)}
             className="text-destructive"
-            title="Delete"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -314,36 +269,12 @@ export default function BlogManager() {
     },
   ];
 
-  const handlePreview = (blog: BlogPost) => {
-    setPreviewContent(blog.content);
-    setIsPreviewOpen(true);
-  };
-  {
-    /**  if (!isLoggedIn) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Please log in to access this page.</div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading blogs...</div>
-      </div>
-    );
-  } */
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Blog Manager</h1>
-          <p className="text-muted-foreground">
-            Manage your blog posts and content
-          </p>
+          <p className="text-muted-foreground">Manage your blog posts</p>
         </div>
         <Dialog
           open={isEditorOpen}
@@ -359,8 +290,7 @@ export default function BlogManager() {
                 setIsEditorOpen(true);
               }}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              New Post
+              <Plus className="mr-2 h-4 w-4" /> New Post
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -374,7 +304,6 @@ export default function BlogManager() {
                 <Label htmlFor="title">Title</Label>
                 <Input
                   id="title"
-                  placeholder="Post title"
                   value={formData.title}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
@@ -382,10 +311,9 @@ export default function BlogManager() {
                 />
               </div>
               <div>
-                <Label htmlFor="slug">Slug</Label>
+                <Label htmlFor="slug">Category (Slug)</Label>
                 <Input
                   id="slug"
-                  placeholder="post-slug"
                   value={formData.slug}
                   onChange={(e) =>
                     setFormData({ ...formData, slug: e.target.value })
@@ -397,47 +325,11 @@ export default function BlogManager() {
                 <RichTextEditor
                   content={formData.content}
                   onChange={(content) => setFormData({ ...formData, content })}
-                  placeholder="Write your blog post..."
-                />
-              </div>
-              <div>
-                <Label htmlFor="meta-title">Meta Title</Label>
-                <Input
-                  id="meta-title"
-                  placeholder="SEO title"
-                  value={formData.meta_title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, meta_title: e.target.value })
-                  }
-                />
-              </div>
-              <div>
-                <Label htmlFor="meta-description">Meta Description</Label>
-                <Input
-                  id="meta-description"
-                  placeholder="SEO description"
-                  value={formData.meta_description}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      meta_description: e.target.value,
-                    })
-                  }
                 />
               </div>
               <div className="flex gap-2">
                 <Button onClick={() => saveBlog()} disabled={saving}>
-                  {saving ? "Saving..." : "Save Draft"}
-                </Button>
-                <Button
-                  variant="default"
-                  onClick={() => {
-                    setFormData({ ...formData, status: "published" });
-                    saveBlog();
-                  }}
-                  disabled={saving}
-                >
-                  {saving ? "Publishing..." : "Publish"}
+                  {saving ? "Saving..." : "Save Blog"}
                 </Button>
                 <Button
                   variant="outline"
