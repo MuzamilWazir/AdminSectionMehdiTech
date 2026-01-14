@@ -80,7 +80,7 @@ export default function Subadmins() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/subadmins`,
+        `${process.env.REACT_APP_API_URL}/subadmins`,
         {
           headers: {
             Authorization: `Bearer ${tokens.access}`,
@@ -116,7 +116,7 @@ export default function Subadmins() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/subadmin`,
+        `${process.env.REACT_APP_API_URL}/subadmin`,
         {
           method: "POST",
           headers: {
@@ -167,7 +167,7 @@ export default function Subadmins() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/subadmin/${id}`,
+        `${process.env.REACT_APP_API_URL}/subadmin/${id}`,
         {
           method: "DELETE",
           headers: {

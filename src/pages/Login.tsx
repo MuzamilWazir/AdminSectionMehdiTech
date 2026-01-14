@@ -16,10 +16,10 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/login`, {
-        method: 'POST',
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/login`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
@@ -27,32 +27,35 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login response:', data);
-        console.log('User data:', data.user);
-        console.log('Tokens:', { access: data.access, refresh: data.refresh });
+        console.log("Login response:", data);
+        console.log("User data:", data.user);
+        console.log("Tokens:", { access: data.access, refresh: data.refresh });
         login(data.user, { access: data.access, refresh: data.refresh });
         navigate("/");
       } else {
-        setError(data.detail || data.non_field_errors?.[0] || 'Login failed');
+        setError(data.detail || data.non_field_errors?.[0] || "Login failed");
       }
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <section 
+    <section
       style={{
         backgroundImage: `url('https://www.mehditechnologies.com/BackgroundPictures/LandingPageBG/AchievementBG.webp')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-        <a href="#" className="flex items-bottom mb-6 text-2xl gap-2 font-semibold text-gray-900 dark:text-white">
+        <a
+          href="#"
+          className="flex items-bottom mb-6 text-2xl gap-2 font-semibold text-gray-900 dark:text-white"
+        >
           <img className="w-30 h-30" src="Logo.png" alt="logo" />
         </a>
         <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
@@ -61,13 +64,21 @@ const Login = () => {
               Sign in to your account
             </h1>
             {error && (
-              <div className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+              <div
+                className="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400"
+                role="alert"
+              >
                 {error}
               </div>
             )}
             <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
               <div>
-                <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your email</label>
+                <label
+                  htmlFor="email"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Your email
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -80,7 +91,12 @@ const Login = () => {
                 />
               </div>
               <div>
-                <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
+                <label
+                  htmlFor="password"
+                  className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                >
+                  Password
+                </label>
                 <input
                   type="password"
                   name="password"
@@ -92,15 +108,14 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-             
+
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? "Signing in..." : "Sign in"}
               </button>
-             
             </form>
           </div>
         </div>

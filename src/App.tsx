@@ -25,18 +25,17 @@ const AppContent = () => {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/** element={
-              isLoggedIn ? <AdminLayout /> : <Navigate to="/login" replace />
-            } */}
-          <Route path="/login" element={<Login />} />{" "}
-          <Route path="/" element={<AdminLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="subadmin" element={<Subadmins />} />
-            <Route path="blogs" element={<BlogManager />} />
-            <Route path="jobs" element={<Jobs />} />
-            <Route path="applicants" element={<Applicants />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
+          <Route path="/login" element={<Login />} />
+          
+            {/**<Navigate to="/login" replace /> */}
+            <Route path="/" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="subadmin" element={<Subadmins />} />
+              <Route path="blogs" element={<BlogManager />} />
+              <Route path="jobs" element={<Jobs />} />
+              <Route path="applicants" element={<Applicants />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

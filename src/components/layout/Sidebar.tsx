@@ -56,7 +56,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
     setShowConfirmDialog(false);
     if (tokens?.refresh) {
       try {
-        await fetch(`${import.meta.env.VITE_API_BASE_URL}/logout`, {
+        await fetch(`${process.env.REACT_APP_API_URL}/logout`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

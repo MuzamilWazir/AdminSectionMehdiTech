@@ -63,14 +63,11 @@ export default function BlogManager() {
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/blogs`,
-        {
-          headers: {
-            Authorization: `Bearer ${tokens.access}`,
-          },
-        }
-      );
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/blogs`, {
+        headers: {
+          Authorization: `Bearer ${tokens.access}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -93,8 +90,8 @@ export default function BlogManager() {
     try {
       const method = currentBlog.id ? "PUT" : "POST";
       const url = currentBlog.id
-        ? `${import.meta.env.VITE_API_BASE_URL}/blogs/${currentBlog.id}`
-        : `${import.meta.env.VITE_API_BASE_URL}/blogs`;
+        ? `${process.env.REACT_APP_API_URL}/blogs/${currentBlog.id}`
+        : `${process.env.REACT_APP_API_URL}/blogs`;
 
       const response = await fetch(url, {
         method,
@@ -128,7 +125,7 @@ export default function BlogManager() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/blogs/${id}`,
+        `${process.env.REACT_APP_API_URL}/blogs/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -154,7 +151,7 @@ export default function BlogManager() {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/blogs/${id}/${status}`,
+        `${process.env.REACT_APP_API_URL}/blogs/${id}/${status}`,
         {
           method: "POST",
           headers: {
