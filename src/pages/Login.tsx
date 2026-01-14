@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { AuthUser } from "../types/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -26,16 +28,24 @@ const Login = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
-        console.log("Login response:", data);
-        console.log("User data:", data.user);
-        console.log("Tokens:", { access: data.access, refresh: data.refresh });
-        login(data.user, { access: data.access, refresh: data.refresh });
-        navigate("/");
-      } else {
-        setError(data.detail || data.non_field_errors?.[0] || "Login failed");
+      if (!response.ok) {
+        setError(data.detail || "Login failed");
+        return;
       }
-    } catch (err) {
+
+      // 🔑 MAP BACKEND RESPONSE → FRONTEND MODELS
+      const user: AuthUser = {
+        email: data.email,
+        role: data.Role,
+      };
+
+      const tokens = {
+        access: data.access_token,
+      };
+
+      login(user, tokens);
+      navigate("/");
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
