@@ -20,30 +20,25 @@ const AppContent = () => {
   const { isLoggedIn } = useAuth();
 
   return (
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />}
-          >
-            {/**<Navigate to="/login" replace /> */}
-            <Route path="/" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="subadmin" element={<Subadmins />} />
-              <Route path="blogs" element={<BlogManager />} />
-              <Route path="jobs" element={<Jobs />} />
-              <Route path="applicants" element={<Applicants />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>{" "}
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? <AdminLayout /> : <Navigate to="/login" replace />
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="subadmin" element={<Subadmins />} />
+          <Route path="blogs" element={<BlogManager />} />
+          <Route path="jobs" element={<Jobs />} />
+          <Route path="applicants" element={<Applicants />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
