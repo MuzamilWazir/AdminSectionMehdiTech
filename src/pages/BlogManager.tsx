@@ -31,17 +31,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function BlogManager() {
   const { tokens, isLoggedIn } = useAuth();
-
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentBlog, setCurrentBlog] = useState<BlogPost | null>(null);
   const [saving, setSaving] = useState(false);
-
   const [previewContent, setPreviewContent] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
   const [thumbnail, setThumbnail] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
@@ -49,24 +45,17 @@ export default function BlogManager() {
     content: "",
     category: "",
     tags: "",
+    author: "Admin", // Matches backend 'author' requirement
   });
-
-  /* ================= FETCH BLOGS ================= */
 
   const fetchBlogs = async () => {
     if (!tokens?.access) return;
-
     try {
       const res = await fetch(`${API_URL}/blogs/`, {
-        headers: {
-          Authorization: `Bearer ${tokens.access}`,
-        },
+        headers: { Authorization: `Bearer ${tokens.access}` },
       });
-
       if (!res.ok) throw new Error();
-
       const data = await res.json();
-      // Ensure we extract the array from the {"blogs": [...]} wrapper
       setBlogs(Array.isArray(data) ? data : data.blogs ?? []);
     } catch {
       toast.error("Failed to load blogs");
@@ -79,13 +68,12 @@ export default function BlogManager() {
     if (isLoggedIn) fetchBlogs();
   }, [isLoggedIn]);
 
-  /* ================= CREATE / UPDATE ================= */
-
   const saveBlog = async () => {
     if (!tokens?.access) return;
 
-    if (!formData.title || !formData.content) {
-      toast.error("Title and content are required");
+    // Validation
+    if (!formData.title || !formData.content || !formData.category) {
+      toast.error("Title, Content, and Category are required");
       return;
     }
 
@@ -93,20 +81,19 @@ export default function BlogManager() {
 
     try {
       if (currentBlog) {
-        /* ---------- UPDATE (Expects JSON) ---------- */
-        // Mapping keys exactly as the backend dict lookup requires
+        /* ---------- UPDATE (PUT - Expects JSON) ---------- */
         const payload = {
           title: formData.title,
           content: formData.content,
           image_url: currentBlog.thumbnail || null,
           internal_urls: [],
-          "user.user.id": currentBlog.id, // Backend looks for this literal key string
-          author: "Admin",
+          "user.user.id": currentBlog.id,
+          author: formData.author,
           tags_list: formData.tags
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
-          category: formData.category || "General",
+          category: formData.category,
         };
 
         const res = await fetch(`${API_URL}/blogs/${currentBlog.id}`, {
@@ -118,18 +105,20 @@ export default function BlogManager() {
           body: JSON.stringify(payload),
         });
 
-        if (!res.ok) throw new Error();
-        toast.success("Blog updated successfully");
+        if (!res.ok) throw new Error("Update failed");
+        toast.success("Blog updated");
       } else {
-        /* ---------- CREATE (Expects FormData) ---------- */
+        /* ---------- CREATE (POST - Expects FormData) ---------- */
         const data = new FormData();
+
+        // These MUST match the backend function parameters exactly
         data.append("title", formData.title);
         data.append("content", formData.content);
-        data.append("author", "Admin");
-        data.append("tags", formData.tags);
-        data.append("category", formData.category || "General");
+        data.append("author", formData.author);
+        data.append("tags", formData.tags || ""); // Send as raw string for backend .split(",")
+        data.append("category", formData.category);
 
-        // Image is optional: only append if selected
+        // Optional image field
         if (thumbnail) {
           data.append("image", thumbnail);
         }
@@ -137,37 +126,38 @@ export default function BlogManager() {
         const res = await fetch(`${API_URL}/blogs/`, {
           method: "POST",
           headers: {
+            // IMPORTANT: Do NOT set Content-Type here.
+            // The browser will automatically set it to multipart/form-data with a boundary.
             Authorization: `Bearer ${tokens.access}`,
-            // Do NOT set Content-Type header for FormData; browser handles it
           },
           body: data,
         });
 
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error("Backend Error:", errorData);
+          throw new Error("Creation failed");
+        }
         toast.success("Blog created successfully");
       }
 
       resetForm();
       setIsEditorOpen(false);
       fetchBlogs();
-    } catch {
-      toast.error("Operation failed");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Operation failed");
     } finally {
       setSaving(false);
     }
   };
 
-  /* ================= DELETE ================= */
-
   const deleteBlog = async (id: string) => {
+    if (!window.confirm("Are you sure?")) return;
     try {
       const res = await fetch(`${API_URL}/blogs/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${tokens?.access}`,
-        },
+        headers: { Authorization: `Bearer ${tokens?.access}` },
       });
-
       if (!res.ok) throw new Error();
       toast.success("Blog deleted");
       fetchBlogs();
@@ -176,14 +166,13 @@ export default function BlogManager() {
     }
   };
 
-  /* ================= HELPERS ================= */
-
   const resetForm = () => {
     setFormData({
       title: "",
       content: "",
       category: "",
       tags: "",
+      author: "Admin",
     });
     setThumbnail(null);
     setCurrentBlog(null);
@@ -195,21 +184,16 @@ export default function BlogManager() {
       title: blog.title,
       content: blog.content,
       category: blog.category,
-      tags: blog.tags ? blog.tags.join(",") : "",
+      tags: Array.isArray(blog.tags) ? blog.tags.join(",") : "",
+      author: blog.author || "Admin",
     });
     setIsEditorOpen(true);
   };
 
-  /* ================= TABLE ================= */
-
   const columns: Column<BlogPost>[] = [
     { key: "title", label: "Title" },
     { key: "author", label: "Author" },
-    {
-      key: "created_at",
-      label: "Date",
-      render: (v) => (v ? new Date(v).toLocaleDateString() : "N/A"),
-    },
+    { key: "category", label: "Category" },
     {
       key: "actions",
       label: "Actions",
@@ -218,7 +202,6 @@ export default function BlogManager() {
           <Button size="icon" variant="ghost" onClick={() => handleEdit(row)}>
             <Edit className="h-4 w-4" />
           </Button>
-
           <Button
             size="icon"
             variant="ghost"
@@ -229,7 +212,6 @@ export default function BlogManager() {
           >
             <Eye className="h-4 w-4" />
           </Button>
-
           <Button
             size="icon"
             variant="ghost"
@@ -247,34 +229,41 @@ export default function BlogManager() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Blog Manager</h1>
-
         <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
           <DialogTrigger asChild>
             <Button onClick={resetForm}>
               <Plus className="mr-2 h-4 w-4" /> New Blog
             </Button>
           </DialogTrigger>
-
           <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>
                 {currentBlog ? "Edit Blog" : "Create Blog"}
               </DialogTitle>
             </DialogHeader>
-
             <div className="space-y-4">
-              <div>
-                <Label>Title</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Author</Label>
+                  <Input
+                    value={formData.author}
+                    onChange={(e) =>
+                      setFormData({ ...formData, author: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label>Category</Label>
                   <Input
                     value={formData.category}
@@ -283,19 +272,18 @@ export default function BlogManager() {
                     }
                   />
                 </div>
-
-                <div>
+                <div className="space-y-2">
                   <Label>Tags (comma separated)</Label>
                   <Input
                     value={formData.tags}
+                    placeholder="tech, news, update"
                     onChange={(e) =>
                       setFormData({ ...formData, tags: e.target.value })
                     }
                   />
                 </div>
               </div>
-
-              <div>
+              <div className="space-y-2">
                 <Label>Thumbnail (Optional)</Label>
                 <Input
                   type="file"
@@ -303,17 +291,19 @@ export default function BlogManager() {
                   onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
                 />
               </div>
-
-              <div>
+              <div className="space-y-2">
                 <Label>Content</Label>
                 <RichTextEditor
                   content={formData.content}
                   onChange={(content) => setFormData({ ...formData, content })}
                 />
               </div>
-
               <Button onClick={saveBlog} disabled={saving} className="w-full">
-                {saving ? "Saving..." : "Save Blog"}
+                {saving
+                  ? "Processing..."
+                  : currentBlog
+                  ? "Update Blog"
+                  : "Create Blog"}
               </Button>
             </div>
           </DialogContent>
