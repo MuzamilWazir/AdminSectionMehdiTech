@@ -45,7 +45,7 @@ export default function BlogManager() {
     content: "",
     category: "",
     tags: "",
-    author: "Admin", // Matches backend 'author' requirement
+    author: "Admin",
   });
 
   const fetchBlogs = async () => {
@@ -71,9 +71,8 @@ export default function BlogManager() {
   const saveBlog = async () => {
     if (!tokens?.access) return;
 
-    // Validation
-    if (!formData.title || !formData.content || !formData.category) {
-      toast.error("Title, Content, and Category are required");
+    if (!formData.title || !formData.content) {
+      toast.error("Title and Content are required");
       return;
     }
 
@@ -81,19 +80,19 @@ export default function BlogManager() {
 
     try {
       if (currentBlog) {
-        /* ---------- UPDATE (PUT - Expects JSON) ---------- */
+        /* ---------- UPDATE (Expects JSON) ---------- */
         const payload = {
           title: formData.title,
           content: formData.content,
-          image_url: currentBlog.thumbnail || null,
+          image_url: currentBlog.thumbnail || "", // Backend looks for "image_url"
           internal_urls: [],
-          "user.user.id": currentBlog.id,
+          "user.user.id": currentBlog.id, // Literal key used by your backend code
           author: formData.author,
           tags_list: formData.tags
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
-          category: formData.category,
+          category: formData.category || "General",
         };
 
         const res = await fetch(`${API_URL}/blogs/${currentBlog.id}`, {
@@ -105,54 +104,46 @@ export default function BlogManager() {
           body: JSON.stringify(payload),
         });
 
-        if (!res.ok) throw new Error("Update failed");
-        toast.success("Blog updated");
+        if (!res.ok) throw new Error();
+        toast.success("Blog updated successfully");
       } else {
-        /* ---------- CREATE (POST - Expects FormData) ---------- */
+        /* ---------- CREATE (Expects FormData) ---------- */
         const data = new FormData();
-
-        // These MUST match the backend function parameters exactly
         data.append("title", formData.title);
         data.append("content", formData.content);
         data.append("author", formData.author);
-        data.append("tags", formData.tags || ""); // Send as raw string for backend .split(",")
-        data.append("category", formData.category);
+        data.append("tags", formData.tags); // String format as backend does .split()
+        data.append("category", formData.category || "General");
 
-        // Optional image field
         if (thumbnail) {
-          data.append("image", thumbnail);
+          data.append("image", thumbnail); // Field name "image" matches backend
         }
 
         const res = await fetch(`${API_URL}/blogs/`, {
           method: "POST",
           headers: {
-            // IMPORTANT: Do NOT set Content-Type here.
-            // The browser will automatically set it to multipart/form-data with a boundary.
             Authorization: `Bearer ${tokens.access}`,
+            // Browser sets boundary automatically for FormData
           },
           body: data,
         });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          console.error("Backend Error:", errorData);
-          throw new Error("Creation failed");
-        }
+        if (!res.ok) throw new Error();
         toast.success("Blog created successfully");
       }
 
       resetForm();
       setIsEditorOpen(false);
       fetchBlogs();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Operation failed");
+    } catch {
+      toast.error("Operation failed");
     } finally {
       setSaving(false);
     }
   };
 
   const deleteBlog = async (id: string) => {
-    if (!window.confirm("Are you sure?")) return;
+    if (!confirm("Are you sure?")) return;
     try {
       const res = await fetch(`${API_URL}/blogs/${id}`, {
         method: "DELETE",
@@ -184,7 +175,7 @@ export default function BlogManager() {
       title: blog.title,
       content: blog.content,
       category: blog.category,
-      tags: Array.isArray(blog.tags) ? blog.tags.join(",") : "",
+      tags: blog.tags ? blog.tags.join(",") : "",
       author: blog.author || "Admin",
     });
     setIsEditorOpen(true);
@@ -244,7 +235,7 @@ export default function BlogManager() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Title</Label>
+                  <Label className="font-bold">Title</Label>
                   <Input
                     value={formData.title}
                     onChange={(e) =>
@@ -253,7 +244,7 @@ export default function BlogManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Author</Label>
+                  <Label className="font-bold">Author</Label>
                   <Input
                     value={formData.author}
                     onChange={(e) =>
@@ -264,7 +255,7 @@ export default function BlogManager() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label className="font-bold">Category</Label>
                   <Input
                     value={formData.category}
                     onChange={(e) =>
@@ -273,10 +264,9 @@ export default function BlogManager() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Tags (comma separated)</Label>
+                  <Label className="font-bold">Tags (comma separated)</Label>
                   <Input
                     value={formData.tags}
-                    placeholder="tech, news, update"
                     onChange={(e) =>
                       setFormData({ ...formData, tags: e.target.value })
                     }
@@ -284,7 +274,7 @@ export default function BlogManager() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Thumbnail (Optional)</Label>
+                <Label className="font-bold">Thumbnail (Optional)</Label>
                 <Input
                   type="file"
                   accept="image/*"
@@ -292,18 +282,14 @@ export default function BlogManager() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Content</Label>
+                <Label className="font-bold">Content</Label>
                 <RichTextEditor
                   content={formData.content}
                   onChange={(content) => setFormData({ ...formData, content })}
                 />
               </div>
               <Button onClick={saveBlog} disabled={saving} className="w-full">
-                {saving
-                  ? "Processing..."
-                  : currentBlog
-                  ? "Update Blog"
-                  : "Create Blog"}
+                {saving ? "Saving..." : "Save Blog"}
               </Button>
             </div>
           </DialogContent>
