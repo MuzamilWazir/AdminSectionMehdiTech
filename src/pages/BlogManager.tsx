@@ -66,6 +66,7 @@ export default function BlogManager() {
       if (!res.ok) throw new Error();
 
       const data = await res.json();
+      // Ensure we extract the array from the {"blogs": [...]} wrapper
       setBlogs(Array.isArray(data) ? data : data.blogs ?? []);
     } catch {
       toast.error("Failed to load blogs");
@@ -92,13 +93,14 @@ export default function BlogManager() {
 
     try {
       if (currentBlog) {
-        /* ---------- UPDATE ---------- */
-
+        /* ---------- UPDATE (Expects JSON) ---------- */
+        // Mapping keys exactly as the backend dict lookup requires
         const payload = {
           title: formData.title,
           content: formData.content,
           image_url: currentBlog.thumbnail || null,
           internal_urls: [],
+          "user.user.id": currentBlog.id, // Backend looks for this literal key string
           author: "Admin",
           tags_list: formData.tags
             .split(",")
@@ -119,25 +121,24 @@ export default function BlogManager() {
         if (!res.ok) throw new Error();
         toast.success("Blog updated successfully");
       } else {
-        /* ---------- CREATE ---------- */
-
-        if (!thumbnail) {
-          toast.error("Thumbnail image is required");
-          return;
-        }
-
+        /* ---------- CREATE (Expects FormData) ---------- */
         const data = new FormData();
         data.append("title", formData.title);
         data.append("content", formData.content);
         data.append("author", "Admin");
         data.append("tags", formData.tags);
         data.append("category", formData.category || "General");
-        data.append("image", thumbnail);
+
+        // Image is optional: only append if selected
+        if (thumbnail) {
+          data.append("image", thumbnail);
+        }
 
         const res = await fetch(`${API_URL}/blogs/`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokens.access}`,
+            // Do NOT set Content-Type header for FormData; browser handles it
           },
           body: data,
         });
@@ -194,7 +195,7 @@ export default function BlogManager() {
       title: blog.title,
       content: blog.content,
       category: blog.category,
-      tags: blog.tags.join(","),
+      tags: blog.tags ? blog.tags.join(",") : "",
     });
     setIsEditorOpen(true);
   };
@@ -207,7 +208,7 @@ export default function BlogManager() {
     {
       key: "created_at",
       label: "Date",
-      render: (v) => new Date(v).toLocaleDateString(),
+      render: (v) => (v ? new Date(v).toLocaleDateString() : "N/A"),
     },
     {
       key: "actions",
@@ -242,8 +243,6 @@ export default function BlogManager() {
     },
   ];
 
-  /* ================= UI ================= */
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -274,36 +273,36 @@ export default function BlogManager() {
                 />
               </div>
 
-              <div>
-                <Label>Category</Label>
-                <Input
-                  value={formData.category}
-                  onChange={(e) =>
-                    setFormData({ ...formData, category: e.target.value })
-                  }
-                />
-              </div>
-
-              <div>
-                <Label>Tags (comma separated)</Label>
-                <Input
-                  value={formData.tags}
-                  onChange={(e) =>
-                    setFormData({ ...formData, tags: e.target.value })
-                  }
-                />
-              </div>
-
-              {!currentBlog && (
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Thumbnail</Label>
+                  <Label>Category</Label>
                   <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
+                    value={formData.category}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
                   />
                 </div>
-              )}
+
+                <div>
+                  <Label>Tags (comma separated)</Label>
+                  <Input
+                    value={formData.tags}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tags: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label>Thumbnail (Optional)</Label>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
+                />
+              </div>
 
               <div>
                 <Label>Content</Label>
@@ -313,8 +312,8 @@ export default function BlogManager() {
                 />
               </div>
 
-              <Button onClick={saveBlog} disabled={saving}>
-                {saving ? "Saving..." : "Save"}
+              <Button onClick={saveBlog} disabled={saving} className="w-full">
+                {saving ? "Saving..." : "Save Blog"}
               </Button>
             </div>
           </DialogContent>
@@ -325,9 +324,9 @@ export default function BlogManager() {
 
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-4xl">
-          <ScrollArea className="h-[70vh]">
+          <ScrollArea className="h-[70vh] p-4">
             <div
-              className="prose"
+              className="prose prose-slate max-w-none"
               dangerouslySetInnerHTML={{ __html: previewContent }}
             />
           </ScrollArea>
