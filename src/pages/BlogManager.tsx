@@ -25,6 +25,7 @@ interface BlogPost {
   category: string;
   thumbnail?: string;
   created_at: string;
+  created_by?: string;
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -84,9 +85,8 @@ export default function BlogManager() {
         const payload = {
           title: formData.title,
           content: formData.content,
-          image_url: currentBlog.thumbnail || "", // Backend looks for "image_url"
+          image_url: currentBlog.thumbnail || "",
           internal_urls: [],
-          "user.user.id": currentBlog.id, // Literal key used by your backend code
           author: formData.author,
           tags_list: formData.tags
             .split(",")
@@ -112,18 +112,17 @@ export default function BlogManager() {
         data.append("title", formData.title);
         data.append("content", formData.content);
         data.append("author", formData.author);
-        data.append("tags", formData.tags); // String format as backend does .split()
+        data.append("tags", formData.tags);
         data.append("category", formData.category || "General");
 
         if (thumbnail) {
-          data.append("image", thumbnail); // Field name "image" matches backend
+          data.append("image", thumbnail);
         }
 
         const res = await fetch(`${API_URL}/blogs/`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokens.access}`,
-            // Browser sets boundary automatically for FormData
           },
           body: data,
         });
@@ -279,7 +278,14 @@ export default function BlogManager() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
+                  disabled={!!currentBlog}
                 />
+                {currentBlog && (
+                  <p className="text-sm text-muted-foreground">
+                    Thumbnail cannot be changed when editing (only available
+                    during creation)
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="font-bold">Content</Label>
