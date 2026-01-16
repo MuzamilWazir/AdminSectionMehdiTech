@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { DataTable, Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -28,15 +27,21 @@ interface BlogPost {
   created_at: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 export default function BlogManager() {
   const { tokens, isLoggedIn } = useAuth();
+
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [currentBlog, setCurrentBlog] = useState<BlogPost | null>(null);
   const [saving, setSaving] = useState(false);
+
   const [previewContent, setPreviewContent] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   const [thumbnail, setThumbnail] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
@@ -52,14 +57,16 @@ export default function BlogManager() {
     if (!tokens?.access) return;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/blogs/`, {
+      const res = await fetch(`${API_URL}/blogs/`, {
         headers: {
           Authorization: `Bearer ${tokens.access}`,
         },
       });
 
+      if (!res.ok) throw new Error();
+
       const data = await res.json();
-      setBlogs(data.blogs || []);
+      setBlogs(Array.isArray(data) ? data : data.blogs ?? []);
     } catch {
       toast.error("Failed to load blogs");
     } finally {
@@ -76,37 +83,44 @@ export default function BlogManager() {
   const saveBlog = async () => {
     if (!tokens?.access) return;
 
+    if (!formData.title || !formData.content) {
+      toast.error("Title and content are required");
+      return;
+    }
+
     setSaving(true);
 
     try {
       if (currentBlog) {
         /* ---------- UPDATE ---------- */
+
         const payload = {
           title: formData.title,
           content: formData.content,
-          thumbnail: currentBlog.thumbnail || "",
+          image_url: currentBlog.thumbnail || null,
           internal_urls: [],
           author: "Admin",
-          tags: formData.tags.split(",").map((t) => t.trim()),
+          tags_list: formData.tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
           category: formData.category || "General",
         };
 
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/blogs/${currentBlog.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${tokens.access}`,
-            },
-            body: JSON.stringify(payload),
-          }
-        );
+        const res = await fetch(`${API_URL}/blogs/${currentBlog.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify(payload),
+        });
 
         if (!res.ok) throw new Error();
         toast.success("Blog updated successfully");
       } else {
         /* ---------- CREATE ---------- */
+
         if (!thumbnail) {
           toast.error("Thumbnail image is required");
           return;
@@ -120,7 +134,7 @@ export default function BlogManager() {
         data.append("category", formData.category || "General");
         data.append("image", thumbnail);
 
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/blogs/`, {
+        const res = await fetch(`${API_URL}/blogs/`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${tokens.access}`,
@@ -133,8 +147,8 @@ export default function BlogManager() {
       }
 
       resetForm();
-      fetchBlogs();
       setIsEditorOpen(false);
+      fetchBlogs();
     } catch {
       toast.error("Operation failed");
     } finally {
@@ -146,10 +160,10 @@ export default function BlogManager() {
 
   const deleteBlog = async (id: string) => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/blogs/${id}`, {
+      const res = await fetch(`${API_URL}/blogs/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${tokens.access}`,
+          Authorization: `Bearer ${tokens?.access}`,
         },
       });
 
@@ -203,6 +217,7 @@ export default function BlogManager() {
           <Button size="icon" variant="ghost" onClick={() => handleEdit(row)}>
             <Edit className="h-4 w-4" />
           </Button>
+
           <Button
             size="icon"
             variant="ghost"
@@ -213,6 +228,7 @@ export default function BlogManager() {
           >
             <Eye className="h-4 w-4" />
           </Button>
+
           <Button
             size="icon"
             variant="ghost"
