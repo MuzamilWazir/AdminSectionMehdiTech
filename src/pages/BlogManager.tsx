@@ -160,6 +160,7 @@ export default function BlogManager() {
           method: "POST",
           headers: {
             // Don't set Content-Type - browser sets it with boundary automatically
+            "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${tokens.access}`,
           },
           body: data,
