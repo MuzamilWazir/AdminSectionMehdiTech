@@ -152,28 +152,27 @@ export default function Jobs() {
     setSaving(true);
 
     try {
-      // Map frontend fields to backend/database column names
-      const jobPayload = {
-        title: formData.title,
-        department: formData.department,
-        employment_type: formData.emp_type, // Map to correct DB column
-        job_description: formData.job_des, // Map to correct DB column
-        qualifications: formData.qualifications,
-        salary_range: formData.salary_range,
-        location: formData.location,
-      };
-
-      console.log("Saving job with payload:", jobPayload);
-
       if (currentJob?.id) {
-        // UPDATE
+        // UPDATE - Backend expects database column names directly
+        const updatePayload = {
+          title: formData.title,
+          department: formData.department,
+          employment_type: formData.emp_type,
+          job_description: formData.job_des,
+          qualifications: formData.qualifications,
+          salary_range: formData.salary_range,
+          location: formData.location,
+        };
+
+        console.log("Updating job with payload:", updatePayload);
+
         const res = await fetch(`${API_URL}/jobs/${currentJob.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${tokens.access}`,
           },
-          body: JSON.stringify(jobPayload),
+          body: JSON.stringify(updatePayload),
         });
 
         if (!res.ok) {
@@ -183,14 +182,26 @@ export default function Jobs() {
 
         toast.success("Job updated successfully");
       } else {
-        // CREATE - Use JSON instead of FormData
+        // CREATE - Backend maps emp_type -> employment_type, job_des -> job_description
+        const createPayload = {
+          title: formData.title,
+          department: formData.department,
+          emp_type: formData.emp_type,
+          job_des: formData.job_des,
+          qualifications: formData.qualifications,
+          salary_range: formData.salary_range,
+          location: formData.location,
+        };
+
+        console.log("Creating job with payload:", createPayload);
+
         const res = await fetch(`${API_URL}/jobs/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${tokens.access}`,
           },
-          body: JSON.stringify(jobPayload),
+          body: JSON.stringify(createPayload),
         });
 
         if (!res.ok) {
