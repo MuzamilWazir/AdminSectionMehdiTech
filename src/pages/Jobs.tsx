@@ -1,16 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable, Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Plus, Edit, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Job {
   id: number;
@@ -55,15 +68,60 @@ const sampleJobs: Job[] = [
     date: "2024-01-10",
   },
 ];
-
+const API_URL = import.meta.env.VITE_API_URL;
 export default function Jobs() {
-  const [jobs, setJobs] = useState<Job[]>(sampleJobs);
+  const { tokens, isLoggedIn } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentJob, setCurrentJob] = useState<Partial<Job>>({});
   const [jobDescription, setJobDescription] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(false);
 
+  // Fetch jobs from API (mocked here)
+
+  const fetchJobs = async () => {
+    setLoading(true);
+    try {
+      const headers: Record<string, string> = {};
+
+      // Add auth header only if token exists
+      if (tokens?.access) {
+        headers.Authorization = `Bearer ${tokens.access}`;
+      }
+
+      const res = await fetch(`${API_URL}/jobs/`, {
+        method: "GET",
+        headers,
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Fetched blogs:", data);
+
+      // Handle different response structures
+      if (Array.isArray(data)) {
+        setJobs(data);
+      } else if (data.jobs && Array.isArray(data.jobs)) {
+        setJobs(data.jobs);
+      } else {
+        setJobs([]);
+      }
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+      toast.error("Failed to load jobs");
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useState(() => {
+    fetchJobs();
+  });
   const columns: Column<Job>[] = [
     {
       key: "title",
@@ -87,9 +145,7 @@ export default function Jobs() {
       key: "applicants",
       label: "Applicants",
       sortable: true,
-      render: (value) => (
-        <Badge variant="secondary">{value}</Badge>
-      ),
+      render: (value) => <Badge variant="secondary">{value}</Badge>,
     },
     {
       key: "status",
@@ -116,8 +172,8 @@ export default function Jobs() {
           >
             <Edit className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
@@ -181,14 +237,18 @@ export default function Jobs() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Job Posts</h1>
-          <p className="text-muted-foreground">Manage job postings and recruitment</p>
+          <p className="text-muted-foreground">
+            Manage job postings and recruitment
+          </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              setCurrentJob({});
-              setJobDescription("");
-            }}>
+            <Button
+              onClick={() => {
+                setCurrentJob({});
+                setJobDescription("");
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Add Job
             </Button>
@@ -248,10 +308,7 @@ export default function Jobs() {
                 </div>
                 <div>
                   <Label htmlFor="salary">Salary Range</Label>
-                  <Input
-                    id="salary"
-                    placeholder="e.g. $80k - $120k"
-                  />
+                  <Input id="salary" placeholder="e.g. $80k - $120k" />
                 </div>
               </div>
               <div>
@@ -273,7 +330,10 @@ export default function Jobs() {
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave}>Save</Button>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
                   Cancel
                 </Button>
               </div>
@@ -294,7 +354,7 @@ export default function Jobs() {
             <DialogTitle>Job Posting Preview</DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[70vh] pr-4">
-            <div 
+            <div
               className="prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: previewContent }}
             />
