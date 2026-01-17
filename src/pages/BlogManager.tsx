@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import Loader from "@/components/loader";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -313,7 +314,7 @@ export default function BlogManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading blogs...</div>
+        <Loader message="Loading blogs..." />
       </div>
     );
   }
@@ -418,8 +419,8 @@ export default function BlogManager() {
                     ? "Updating..."
                     : "Creating..."
                   : currentBlog
-                  ? "Update Blog"
-                  : "Create Blog"}
+                    ? "Update Blog"
+                    : "Create Blog"}
               </Button>
             </div>
           </DialogContent>

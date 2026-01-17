@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Plus, Edit, Trash2, Eye } from "lucide-react";
+import Loader from "@/components/loader";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
@@ -30,63 +31,42 @@ interface Job {
   title: string;
   department: string;
   location: string;
-  type: string;
-  applicants: number;
-  status: "active" | "closed";
-  date: string;
+  applicants?: number;
+  status: "draft" | "live" | "closed";
+  emp_type: string;
+  job_des: string;
+  qualifications: string;
+  salary_range: string;
+  created_at?: string;
 }
 
-const sampleJobs: Job[] = [
-  {
-    id: 1,
-    title: "Senior Frontend Developer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Full-time",
-    applicants: 24,
-    status: "active",
-    date: "2024-01-15",
-  },
-  {
-    id: 2,
-    title: "Product Manager",
-    department: "Product",
-    location: "New York",
-    type: "Full-time",
-    applicants: 18,
-    status: "active",
-    date: "2024-01-20",
-  },
-  {
-    id: 3,
-    title: "UX Designer",
-    department: "Design",
-    location: "Hybrid",
-    type: "Contract",
-    applicants: 12,
-    status: "closed",
-    date: "2024-01-10",
-  },
-];
 const API_URL = import.meta.env.VITE_API_URL;
+
 export default function Jobs() {
   const { tokens, isLoggedIn } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentJob, setCurrentJob] = useState<Partial<Job>>({});
-  const [jobDescription, setJobDescription] = useState("");
+  const [currentJob, setCurrentJob] = useState<Partial<Job> | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  // Fetch jobs from API (mocked here)
+  const [formData, setFormData] = useState({
+    title: "",
+    department: "",
+    emp_type: "full-time",
+    job_des: "",
+    qualifications: "",
+    salary_range: "",
+    location: "remote",
+  });
 
   const fetchJobs = async () => {
     setLoading(true);
     try {
       const headers: Record<string, string> = {};
 
-      // Add auth header only if token exists
       if (tokens?.access) {
         headers.Authorization = `Bearer ${tokens.access}`;
       }
@@ -101,16 +81,27 @@ export default function Jobs() {
       }
 
       const data = await res.json();
-      console.log("Fetched blogs:", data);
+      console.log("Fetched jobs:", data);
 
-      // Handle different response structures
-      if (Array.isArray(data)) {
-        setJobs(data);
-      } else if (data.jobs && Array.isArray(data.jobs)) {
-        setJobs(data.jobs);
-      } else {
-        setJobs([]);
-      }
+      // Transform backend data to frontend format
+      let jobsData = Array.isArray(data) ? data : (data.jobs || []);
+      
+      // Map backend fields to frontend fields
+      const transformedJobs = jobsData.map((job: any) => ({
+        id: job.id,
+        title: job.title,
+        department: job.department || "",
+        location: job.location || "remote",
+        applicants: job.applicants || 0,
+        status: job.status || "draft",
+        emp_type: job.employment_type || job.emp_type || "full-time",
+        job_des: job.job_description || job.job_des || "",
+        qualifications: job.qualifications || "",
+        salary_range: job.salary_range || "",
+        created_at: job.created_at || ""
+      }));
+
+      setJobs(transformedJobs);
     } catch (error) {
       console.error("Error fetching jobs:", error);
       toast.error("Failed to load jobs");
@@ -146,9 +137,141 @@ export default function Jobs() {
       toast.error(error instanceof Error ? error.message : "Delete failed");
     }
   };
-  useState(() => {
+
+  const saveJob = async () => {
+    if (!tokens?.access) {
+      toast.error("Please login to continue");
+      return;
+    }
+
+    if (!formData.title || !formData.job_des) {
+      toast.error("Title and Description are required");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      // Prepare payload for both CREATE and UPDATE
+      const jobPayload = {
+        title: formData.title,
+        department: formData.department,
+        emp_type: formData.emp_type,
+        job_des: formData.job_des,
+        qualifications: formData.qualifications,
+        salary_range: formData.salary_range,
+        location: formData.location,
+      };
+
+      console.log("Saving job with payload:", jobPayload);
+
+      if (currentJob?.id) {
+        // UPDATE
+        const res = await fetch(`${API_URL}/jobs/${currentJob.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify(jobPayload),
+        });
+
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.detail || "Update failed");
+        }
+
+        toast.success("Job updated successfully");
+      } else {
+        // CREATE - Use JSON instead of FormData
+        const res = await fetch(`${API_URL}/jobs/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokens.access}`,
+          },
+          body: JSON.stringify(jobPayload),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Error response:", errorText);
+          let errorMessage = "Failed to create Job";
+
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.detail || errorMessage;
+          } catch {
+            errorMessage = errorText || errorMessage;
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        const result = await res.json();
+        console.log("Job created:", result);
+        toast.success("Job created successfully");
+      }
+
+      resetForm();
+      setIsDialogOpen(false);
+      fetchJobs();
+    } catch (error) {
+      console.error("Save Job error:", error);
+      toast.error(error instanceof Error ? error.message : "Operation failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      department: "",
+      emp_type: "full-time",
+      job_des: "",
+      qualifications: "",
+      salary_range: "",
+      location: "remote",
+    });
+    setCurrentJob(null);
+  };
+
+  const handleEdit = (job: Job) => {
+    setCurrentJob(job);
+    setFormData({
+      title: job.title,
+      department: job.department,
+      emp_type: job.emp_type,
+      job_des: job.job_des,
+      qualifications: job.qualifications,
+      salary_range: job.salary_range,
+      location: job.location,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handlePreview = (job: Job) => {
+    setPreviewContent(`
+      <h1>${job.title}</h1>
+      <div style="margin: 1rem 0;">
+        <p><strong>Department:</strong> ${job.department}</p>
+        <p><strong>Location:</strong> ${job.location}</p>
+        <p><strong>Type:</strong> ${job.emp_type}</p>
+        <p><strong>Salary Range:</strong> ${job.salary_range || "Not specified"}</p>
+        <p><strong>Qualifications:</strong> ${job.qualifications}</p>
+      </div>
+      <hr style="margin: 1.5rem 0;"/>
+      <h2>Job Description</h2>
+      <div>${job.job_des}</div>
+    `);
+    setIsPreviewOpen(true);
+  };
+
+  useEffect(() => {
     fetchJobs();
-  });
+  }, [isLoggedIn, tokens?.access]);
+
   const columns: Column<Job>[] = [
     {
       key: "title",
@@ -165,20 +288,20 @@ export default function Jobs() {
       label: "Location",
     },
     {
-      key: "type",
+      key: "emp_type",
       label: "Type",
     },
     {
       key: "applicants",
       label: "Applicants",
       sortable: true,
-      render: (value) => <Badge variant="secondary">{value}</Badge>,
+      render: (value) => <Badge>{value ?? 0}</Badge>,
     },
     {
       key: "status",
       label: "Status",
       render: (value) => (
-        <Badge variant={value === "active" ? "default" : "secondary"}>
+        <Badge variant={value === "live" ? "default" : "secondary"}>
           {value}
         </Badge>
       ),
@@ -227,37 +350,13 @@ export default function Jobs() {
     },
   ];
 
-  const handlePreview = (job: Job) => {
-    setPreviewContent(`
-      <h1>${job.title}</h1>
-      <div style="margin: 1rem 0;">
-        <p><strong>Department:</strong> ${job.department}</p>
-        <p><strong>Location:</strong> ${job.location}</p>
-        <p><strong>Type:</strong> ${job.type}</p>
-        <p><strong>Applicants:</strong> ${job.applicants}</p>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader message="Loading Jobs..." />
       </div>
-      <hr style="margin: 1.5rem 0;"/>
-      <h2>Job Description</h2>
-      <div>Sample job description content would go here...</div>
-    `);
-    setIsPreviewOpen(true);
-  };
-
-  const handleEdit = (job: Job) => {
-    setCurrentJob(job);
-    setJobDescription(""); // In real app, load saved description
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = (id: number) => {
-    setJobs(jobs.filter((j) => j.id !== id));
-    toast.success("Job posting deleted");
-  };
-
-  const handleSave = () => {
-    toast.success("Job posting saved");
-    setIsDialogOpen(false);
-  };
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -272,8 +371,8 @@ export default function Jobs() {
           <DialogTrigger asChild>
             <Button
               onClick={() => {
-                setCurrentJob({});
-                setJobDescription("");
+                resetForm();
+                setCurrentJob(null);
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -283,7 +382,7 @@ export default function Jobs() {
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {currentJob.id ? "Edit Job" : "Create New Job"}
+                {currentJob?.id ? "Edit Job" : "Create New Job"}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
@@ -292,7 +391,10 @@ export default function Jobs() {
                 <Input
                   id="title"
                   placeholder="e.g. Senior Frontend Developer"
-                  defaultValue={currentJob.title}
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -301,12 +403,20 @@ export default function Jobs() {
                   <Input
                     id="department"
                     placeholder="e.g. Engineering"
-                    defaultValue={currentJob.department}
+                    value={formData.department}
+                    onChange={(e) =>
+                      setFormData({ ...formData, department: e.target.value })
+                    }
                   />
                 </div>
                 <div>
                   <Label htmlFor="location">Location</Label>
-                  <Select defaultValue={currentJob.location || "remote"}>
+                  <Select
+                    value={formData.location}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, location: val })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -321,7 +431,12 @@ export default function Jobs() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="type">Employment Type</Label>
-                  <Select defaultValue={currentJob.type || "full-time"}>
+                  <Select
+                    value={formData.emp_type}
+                    onValueChange={(val) =>
+                      setFormData({ ...formData, emp_type: val })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -335,14 +450,21 @@ export default function Jobs() {
                 </div>
                 <div>
                   <Label htmlFor="salary">Salary Range</Label>
-                  <Input id="salary" placeholder="e.g. $80k - $120k" />
+                  <Input
+                    id="salary"
+                    placeholder="e.g. $80k - $120k"
+                    value={formData.salary_range}
+                    onChange={(e) =>
+                      setFormData({ ...formData, salary_range: e.target.value })
+                    }
+                  />
                 </div>
               </div>
               <div>
                 <Label htmlFor="description">Job Description</Label>
                 <RichTextEditor
-                  content={jobDescription}
-                  onChange={setJobDescription}
+                  content={formData.job_des}
+                  onChange={(val) => setFormData({ ...formData, job_des: val })}
                   placeholder="Describe the role, responsibilities, and requirements..."
                   className="mt-2"
                 />
@@ -353,13 +475,28 @@ export default function Jobs() {
                   id="qualifications"
                   rows={3}
                   placeholder="List required qualifications..."
+                  value={formData.qualifications}
+                  onChange={(e) =>
+                    setFormData({ ...formData, qualifications: e.target.value })
+                  }
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSave}>Save</Button>
+                <Button onClick={saveJob} disabled={saving}>
+                  {saving
+                    ? currentJob?.id
+                      ? "Updating..."
+                      : "Creating..."
+                    : currentJob?.id
+                      ? "Update Job"
+                      : "Create Job"}
+                </Button>
                 <Button
                   variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    resetForm();
+                  }}
                 >
                   Cancel
                 </Button>
