@@ -119,6 +119,33 @@ export default function Jobs() {
       setLoading(false);
     }
   };
+
+  const deleteJob = async (id: number) => {
+    if (!tokens?.access) {
+      toast.error("Please login to continue");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this Job?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/jobs/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${tokens.access}` },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || "Delete failed");
+      }
+
+      toast.success("Job deleted successfully");
+      fetchJobs();
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error(error instanceof Error ? error.message : "Delete failed");
+    }
+  };
   useState(() => {
     fetchJobs();
   });
@@ -188,7 +215,7 @@ export default function Jobs() {
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(row.id);
+              deleteJob(row.id);
             }}
             className="text-destructive"
             title="Delete"
