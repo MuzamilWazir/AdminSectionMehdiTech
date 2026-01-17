@@ -91,7 +91,7 @@ export default function Jobs() {
         headers.Authorization = `Bearer ${tokens.access}`;
       }
 
-      const res = await fetch(`${API_URL}/jobs/`, {
+      const res = await fetch(`${API_URL}/jobs/jobs`, {
         method: "GET",
         headers,
       });
