@@ -46,6 +46,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <AppContent />
+      <Sonner position="top-right" richColors />
     </AuthProvider>
   </QueryClientProvider>
 );
