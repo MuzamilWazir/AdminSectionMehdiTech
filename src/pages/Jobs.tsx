@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Plus, Edit, Trash2, Eye } from "lucide-react";
-import Loader from "@/components/Loader";
+import Loading from "@/components/Loading";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
@@ -84,8 +84,8 @@ export default function Jobs() {
       console.log("Fetched jobs:", data);
 
       // Transform backend data to frontend format
-      let jobsData = Array.isArray(data) ? data : (data.jobs || []);
-      
+      let jobsData = Array.isArray(data) ? data : data.jobs || [];
+
       // Map backend fields to frontend fields
       const transformedJobs = jobsData.map((job: any) => ({
         id: job.id,
@@ -98,7 +98,7 @@ export default function Jobs() {
         job_des: job.job_description || job.job_des || "",
         qualifications: job.qualifications || "",
         salary_range: job.salary_range || "",
-        created_at: job.created_at || ""
+        created_at: job.created_at || "",
       }));
 
       setJobs(transformedJobs);
@@ -152,12 +152,12 @@ export default function Jobs() {
     setSaving(true);
 
     try {
-      // Prepare payload for both CREATE and UPDATE
+      // Map frontend fields to backend/database column names
       const jobPayload = {
         title: formData.title,
         department: formData.department,
-        emp_type: formData.emp_type,
-        job_des: formData.job_des,
+        employment_type: formData.emp_type, // Map to correct DB column
+        job_description: formData.job_des, // Map to correct DB column
         qualifications: formData.qualifications,
         salary_range: formData.salary_range,
         location: formData.location,
@@ -353,7 +353,7 @@ export default function Jobs() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader message="Loading Jobs..." />
+        <Loading message="Loading Jobs..." />
       </div>
     );
   }

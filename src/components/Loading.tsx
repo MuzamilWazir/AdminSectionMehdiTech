@@ -2,8 +2,7 @@ import React from "react";
 interface LoaderProps {
   message?: string;
 }
-
-const Loader = ({ message }: LoaderProps) => {
+const Loading = ({ message }: LoaderProps) => {
   return (
     <div
       className={`flex flex-col items-center justify-center space-y-4 h-32 `}
@@ -56,4 +55,4 @@ const Loader = ({ message }: LoaderProps) => {
   );
 };
 
-export default Loader;
+export default Loading;
