@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Plus, Edit, Eye, Trash2 } from "lucide-react";
-import Loader from "@/components/loader";
+import Loader from "@/components/Loader";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 

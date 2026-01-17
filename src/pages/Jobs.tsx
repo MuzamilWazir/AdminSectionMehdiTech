@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Plus, Edit, Trash2, Eye } from "lucide-react";
-import Loader from "@/components/loader";
+import Loader from "@/components/Loader";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
