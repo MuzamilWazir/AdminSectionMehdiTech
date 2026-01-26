@@ -22,18 +22,18 @@ import {
   Link as LinkIcon,
   ImageIcon,
   Strikethrough,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
   className?: string;
+  apiUrl?: string;
 }
 
 export function RichTextEditor({
@@ -41,7 +41,11 @@ export function RichTextEditor({
   onChange,
   placeholder = "Start writing...",
   className,
+  apiUrl = import.meta.env.VITE_API_URL,
 }: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -51,7 +55,7 @@ export function RichTextEditor({
       }),
       Image.configure({
         HTMLAttributes: {
-          class: "max-w-full h-auto rounded-lg",
+          class: "max-w-full h-auto rounded-lg my-4",
         },
       }),
       Placeholder.configure({
@@ -76,12 +80,48 @@ export function RichTextEditor({
     }
   }, [editor]);
 
-  const addImage = useCallback(() => {
-    const url = window.prompt("Enter image URL:");
-    if (url && editor) {
-      editor.chain().focus().setImage({ src: url }).run();
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("image_file", file);
+
+    const res = await fetch(`${apiUrl}/blogs/uploadimage`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error("Image upload failed");
     }
-  }, [editor]);
+
+    const data = await res.json();
+    return data.url;
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editor) return;
+
+    setUploadingImage(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      editor.chain().focus().setImage({ src: url }).run();
+      toast.success("Image uploaded and inserted successfully!");
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      toast.error("Failed to upload image. Please try again.");
+    } finally {
+      setUploadingImage(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const addImage = useCallback(() => {
+    // Trigger file input click
+    fileInputRef.current?.click();
+  }, []);
 
   if (!editor) {
     return null;
@@ -89,6 +129,15 @@ export function RichTextEditor({
 
   return (
     <div className={cn("rounded-lg border border-border bg-card", className)}>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
+
       <div className="flex flex-wrap gap-1 border-b border-border p-2">
         <Button
           type="button"
@@ -257,12 +306,23 @@ export function RichTextEditor({
           variant="ghost"
           size="sm"
           onClick={addImage}
+          disabled={uploadingImage}
           title="Add Image"
         >
-          <ImageIcon className="h-4 w-4" />
+          {uploadingImage ? (
+            <Upload className="h-4 w-4 animate-pulse" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
         </Button>
       </div>
       <EditorContent editor={editor} />
+      {uploadingImage && (
+        <div className="p-2 text-sm text-blue-600 border-t border-border flex items-center gap-2">
+          <Upload className="h-4 w-4 animate-pulse" />
+          Uploading image to Cloudinary...
+        </div>
+      )}
     </div>
   );
 }
