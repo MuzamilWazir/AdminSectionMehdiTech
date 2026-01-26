@@ -243,10 +243,10 @@ export default function Applicants() {
                     <Download className="mr-2 h-4 w-4" />
                     Download Resume
                   </Button>
-                  <Button variant="outline" className="flex-1">
+                  {/**   <Button variant="outline" className="flex-1">
                     <Calendar className="mr-2 h-4 w-4" />
                     Schedule Interview
-                  </Button>
+                  </Button>*/}
                 </div>
 
                 <Button className="w-full">
