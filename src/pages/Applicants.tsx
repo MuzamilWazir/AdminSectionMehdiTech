@@ -2,8 +2,20 @@ import { useState } from "react";
 import { DataTable, Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Download, Mail, Calendar } from "lucide-react";
@@ -54,7 +66,9 @@ const sampleApplicants: Applicant[] = [
 
 export default function Applicants() {
   const [applicants, setApplicants] = useState<Applicant[]>(sampleApplicants);
-  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null);
+  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(
+    null,
+  );
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const statusColors: Record<Applicant["status"], string> = {
@@ -89,19 +103,18 @@ export default function Applicants() {
       key: "status",
       label: "Status",
       render: (value: Applicant["status"]) => (
-        <Badge variant={statusColors[value] as any}>
-          {value}
-        </Badge>
+        <Badge variant={statusColors[value] as any}>{value}</Badge>
       ),
     },
     {
       key: "score",
       label: "Score",
-      render: (value) => value ? (
-        <Badge variant="outline">{value}/10</Badge>
-      ) : (
-        <span className="text-muted-foreground">-</span>
-      ),
+      render: (value) =>
+        value ? (
+          <Badge variant="outline">{value}/10</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        ),
     },
   ];
 
@@ -112,9 +125,11 @@ export default function Applicants() {
 
   const handleStatusChange = (status: Applicant["status"]) => {
     if (selectedApplicant) {
-      setApplicants(applicants.map(a =>
-        a.id === selectedApplicant.id ? { ...a, status } : a
-      ));
+      setApplicants(
+        applicants.map((a) =>
+          a.id === selectedApplicant.id ? { ...a, status } : a,
+        ),
+      );
       setSelectedApplicant({ ...selectedApplicant, status });
       toast.success("Status updated");
     }
@@ -125,17 +140,19 @@ export default function Applicants() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Applicants</h1>
-          <p className="text-muted-foreground">Review and manage job applications</p>
+          <p className="text-muted-foreground">
+            Review and manage job applications
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          {/**    <Button variant="outline">
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
           <Button variant="outline">
             <Mail className="mr-2 h-4 w-4" />
             Send Email
-          </Button>
+          </Button>*/}
         </div>
       </div>
 
@@ -155,20 +172,35 @@ export default function Applicants() {
               </SheetHeader>
               <div className="mt-6 space-y-6">
                 <div>
-                  <h3 className="mb-2 text-sm font-medium">Contact Information</h3>
+                  <h3 className="mb-2 text-sm font-medium">
+                    Contact Information
+                  </h3>
                   <div className="space-y-1 text-sm">
-                    <p className="text-muted-foreground">Email: {selectedApplicant.email}</p>
-                    <p className="text-muted-foreground">Phone: {selectedApplicant.phone}</p>
+                    <p className="text-muted-foreground">
+                      Email: {selectedApplicant.email}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Phone: {selectedApplicant.phone}
+                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-sm font-medium">Application Details</h3>
+                  <h3 className="mb-2 text-sm font-medium">
+                    Application Details
+                  </h3>
                   <div className="space-y-1 text-sm">
-                    <p className="text-muted-foreground">Position: {selectedApplicant.job}</p>
-                    <p className="text-muted-foreground">Applied: {selectedApplicant.appliedDate}</p>
                     <p className="text-muted-foreground">
-                      Status: <Badge variant={statusColors[selectedApplicant.status] as any}>
+                      Position: {selectedApplicant.job}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Applied: {selectedApplicant.appliedDate}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Status:{" "}
+                      <Badge
+                        variant={statusColors[selectedApplicant.status] as any}
+                      >
                         {selectedApplicant.status}
                       </Badge>
                     </p>
@@ -179,7 +211,9 @@ export default function Applicants() {
                   <Label>Change Status</Label>
                   <Select
                     value={selectedApplicant.status}
-                    onValueChange={(value) => handleStatusChange(value as Applicant["status"])}
+                    onValueChange={(value) =>
+                      handleStatusChange(value as Applicant["status"])
+                    }
                   >
                     <SelectTrigger className="mt-2">
                       <SelectValue />
