@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/RichTextEditor";
-import { Plus, Edit, Eye, Trash2 } from "lucide-react";
+import { Plus, Edit, Eye, Trash2, Upload } from "lucide-react";
 import Loading from "@/components/Loading";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -41,6 +41,8 @@ export default function BlogManager() {
   const [previewContent, setPreviewContent] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>("");
+  const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -50,11 +52,49 @@ export default function BlogManager() {
     author: "Admin",
   });
 
+  // Function to upload image to Cloudinary
+  const uploadImageToCloudinary = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("image_file", file);
+
+    const res = await fetch(`${API_URL}/blogs/uploadimage`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!res.ok) {
+      throw new Error("Image upload failed");
+    }
+
+    const data = await res.json();
+    return data.url;
+  };
+
+  // Handle thumbnail selection and upload
+  const handleThumbnailChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setThumbnail(file);
+    setUploadingThumbnail(true);
+
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setThumbnailUrl(url);
+      toast.success("Thumbnail uploaded successfully");
+    } catch (error) {
+      console.error("Thumbnail upload error:", error);
+      toast.error("Failed to upload thumbnail");
+      setThumbnail(null);
+    } finally {
+      setUploadingThumbnail(false);
+    }
+  };
+
   const fetchBlogs = async () => {
     try {
       const headers: Record<string, string> = {};
 
-      // Add auth header only if token exists
       if (tokens?.access) {
         headers.Authorization = `Bearer ${tokens.access}`;
       }
@@ -70,7 +110,6 @@ export default function BlogManager() {
       const data = await res.json();
       console.log("Fetched blogs:", data);
 
-      // Handle different response structures
       if (Array.isArray(data)) {
         setBlogs(data);
       } else if (data.blogs && Array.isArray(data.blogs)) {
@@ -110,7 +149,7 @@ export default function BlogManager() {
         const payload = {
           title: formData.title,
           content: formData.content,
-          image_url: currentBlog.thumbnail || "",
+          image_url: thumbnailUrl || currentBlog.thumbnail || "",
           internal_urls: [],
           author: formData.author,
           tags_list: formData.tags
@@ -144,7 +183,7 @@ export default function BlogManager() {
         data.append("tags", formData.tags);
         data.append("category", formData.category || "General");
 
-        // Add thumbnail if selected
+        // Add thumbnail if uploaded
         if (thumbnail) {
           data.append("image", thumbnail);
         }
@@ -155,12 +194,12 @@ export default function BlogManager() {
           category: formData.category,
           tags: formData.tags,
           hasThumbnail: !!thumbnail,
+          thumbnailUrl: thumbnailUrl,
         });
 
         const res = await fetch(`${API_URL}/blogs/`, {
           method: "POST",
           headers: {
-            // Don't set Content-Type - browser sets it with boundary automatically
             Authorization: `Bearer ${tokens.access}`,
           },
           body: data,
@@ -175,7 +214,6 @@ export default function BlogManager() {
             const errorData = JSON.parse(errorText);
             errorMessage = errorData.detail || errorMessage;
           } catch {
-            // If response is not JSON, use the text
             errorMessage = errorText || errorMessage;
           }
 
@@ -234,6 +272,7 @@ export default function BlogManager() {
       author: "Admin",
     });
     setThumbnail(null);
+    setThumbnailUrl("");
     setCurrentBlog(null);
   };
 
@@ -246,7 +285,8 @@ export default function BlogManager() {
       tags: blog.tags ? blog.tags.join(", ") : "",
       author: blog.author || "Admin",
     });
-    setThumbnail(null); // Reset thumbnail on edit
+    setThumbnail(null);
+    setThumbnailUrl(blog.thumbnail || "");
     setIsEditorOpen(true);
   };
 
@@ -385,23 +425,30 @@ export default function BlogManager() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="font-bold">Thumbnail (Optional)</Label>
+                <Label className="font-bold">Thumbnail</Label>
                 <Input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setThumbnail(e.target.files?.[0] || null)}
-                  disabled={!!currentBlog}
+                  onChange={handleThumbnailChange}
+                  disabled={uploadingThumbnail}
                 />
-                {thumbnail && (
-                  <p className="text-sm text-green-600">
-                    Selected: {thumbnail.name}
+                {uploadingThumbnail && (
+                  <p className="text-sm text-blue-600 flex items-center gap-2">
+                    <Upload className="h-4 w-4 animate-pulse" />
+                    Uploading thumbnail...
                   </p>
                 )}
-                {currentBlog && (
-                  <p className="text-sm text-muted-foreground">
-                    Thumbnail cannot be changed when editing (only available
-                    during creation)
-                  </p>
+                {thumbnailUrl && (
+                  <div className="mt-2">
+                    <img
+                      src={thumbnailUrl}
+                      alt="Thumbnail preview"
+                      className="max-w-xs rounded-md border"
+                    />
+                    <p className="text-sm text-green-600 mt-1">
+                      ✓ Thumbnail uploaded
+                    </p>
+                  </div>
                 )}
               </div>
               <div className="space-y-2">
@@ -412,8 +459,11 @@ export default function BlogManager() {
                   content={formData.content}
                   onChange={(content) => setFormData({ ...formData, content })}
                 />
+                <p className="text-xs text-muted-foreground">
+                  💡 Tip: Click the image icon in the toolbar to upload and insert images directly into your content
+                </p>
               </div>
-              <Button onClick={saveBlog} disabled={saving} className="w-full">
+              <Button onClick={saveBlog} disabled={saving || uploadingThumbnail} className="w-full">
                 {saving
                   ? currentBlog
                     ? "Updating..."
