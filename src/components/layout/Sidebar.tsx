@@ -19,7 +19,7 @@ const allNavItems = [
     label: "Dashboard",
     roles: ["admin", "subadmin"],
   },
-  { to: "/subadmin", icon: Users, label: "Manage Subadmin", roles: ["admin"] },
+  
   {
     to: "/blogs",
     icon: FileText,
@@ -33,14 +33,18 @@ const allNavItems = [
     roles: ["admin", "subadmin"],
   },
   { to: "/applicants", icon: Users, label: "Applicants", roles: ["admin"] },
+
+  
+];
+
+{/**  
+  { to: "/subadmin", icon: Users, label: "Manage Subadmin", roles: ["admin"] },
   {
     to: "/settings",
     icon: Settings,
     label: "Settings",
     roles: ["admin", "subadmin"],
-  },
-];
-
+  }, */}
 interface SidebarProps {
   collapsed: boolean;
 }
@@ -93,7 +97,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
             key={item.to}
             to={item.to}
             end={item.to === "/"}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-white transition-colors hover:bg-accent"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-white transition-colors hover:bg-accent hover:text-black"
             activeClassName="bg-[#58C9EC] text-black"
           >
             <item.icon className="h-5 w-5 flex-shrink-0" />
